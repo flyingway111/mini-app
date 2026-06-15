@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Тренер</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: #0c0c0c;
+    --s1: #131313;
+    --s2: #181818;
+    --border: #1f1f1f;
+    --text: #f0f0f0;
+    --muted: #444;
+    --muted2: #2a2a2a;
+    --accent: #c8f135;
+    --accent-bg: rgba(200,241,53,0.07);
+    --accent-border: rgba(200,241,53,0.18);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, system-ui, sans-serif;
+    min-height: 100vh;
+    padding-bottom: 72px;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* HERO */
+  .hero {
+    padding: 24px 16px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ava {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: var(--s2);
+    border: 1px solid var(--accent-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .hero-info { flex: 1; }
+
+  .hero-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.02em;
+    margin-bottom: 2px;
+  }
+
+  .hero-title {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 10px;
+  }
+
+  .hstat {
+    background: var(--s1);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 4px 8px;
+    font-size: 0.68rem;
+    color: var(--muted);
+  }
+
+  .hstat b { color: var(--accent); font-weight: 600; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    padding: 0 16px;
+    gap: 2px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .tab {
+    padding: 10px 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 1.5px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* SCREENS */
+  .screen { display: none; padding: 12px 16px; }
+  .screen.active { display: block; }
+
+  .label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    margin-bottom: 8px;
+    margin-top: 4px;
+  }
+
+  /* PROGRAM CARDS */
+  .pcard {
+    background: var(--s1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 7px;
+    cursor: pointer;
+    transition: border-color 0.12s, background 0.12s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .pcard:active { transform: scale(0.99); }
+
+  .pcard.selected {
+    border-color: var(--accent-border);
+    background: var(--accent-bg);
+  }
+
+  .pcard-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: var(--s2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    transition: background 0.12s;
+  }
+
+  .pcard.selected .pcard-icon {
+    background: rgba(200,241,53,0.1);
+    border-color: var(--accent-border);
+  }
+
+  .pcard-body { flex: 1; min-width: 0; }
+
+  .pcard-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 3px;
+    letter-spacing: -0.01em;
+  }
+
+  .pcard-meta {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .pmeta {
+    font-size: 0.68rem;
+    color: var(--muted);
+    background: var(--muted2);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .pcard.selected .pmeta {
+    background: rgba(200,241,53,0.08);
+    color: rgba(200,241,53,0.6);
+  }
+
+  .pcard-price {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--accent);
+    white-space: nowrap;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .pcard-price small {
+    display: block;
+    font-size: 0.62rem;
+    font-weight: 400;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  /* CHECK */
+  .check {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    color: transparent;
+    transition: all 0.12s;
+  }
+
+  .pcard.selected .check {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0c0c0c;
+  }
+
+  /* SCHEDULE */
+  .day {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .day:last-child { border-bottom: none; }
+
+  .day-name {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--muted);
+    width: 28px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .slots { display: flex; gap: 5px; flex-wrap: wrap; }
+
+  .slot {
+    font-size: 0.72rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--s1);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .slot.free {
+    border-color: var(--accent-border);
+    color: var(--accent);
+    background: var(--accent-bg);
+  }
+
+  .slot.busy {
+    opacity: 0.25;
+    text-decoration: line-through;
+  }
+
+  /* ABOUT */
+  .about-text {
+    font-size: 0.82rem;
+    color: #666;
+    line-height: 1.7;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+
+  .ach {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ach:last-child { border-bottom: none; }
+
+  .ach-ico {
+    font-size: 1rem;
+    width: 28px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .ach-t { font-size: 0.82rem; color: #ccc; font-weight: 500; }
+  .ach-s { font-size: 0.7rem; color: var(--muted); margin-top: 1px; }
+
+  /* BOTTOM */
+  .bottom {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    padding: 10px 16px;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+  }
+
+  .btn {
+    width: 100%;
+    background: var(--accent);
+    color: #0c0c0c;
+    border: none;
+    border-radius: 10px;
+    padding: 13px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.12s;
+    letter-spacing: -0.01em;
+  }
+
+  .btn:active { opacity: 0.85; }
+  .btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+  /* MODAL */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 100;
+    display: none;
+    align-items: flex-end;
+  }
+
+  .overlay.open { display: flex; }
+
+  .modal {
+    width: 100%;
+    background: var(--s1);
+    border-radius: 18px 18px 0 0;
+    padding: 16px 16px 28px;
+    animation: up 0.22s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  @keyframes up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .handle {
+    width: 32px; height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 14px;
+  }
+
+  .modal-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 2px;
+    letter-spacing: -0.01em;
+  }
+
+  .modal-sub { font-size: 0.75rem; color: var(--muted); margin-bottom: 16px; }
+
+  .fg { margin-bottom: 10px; }
+
+  .fl {
+    display: block;
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 5px;
+    font-weight: 600;
+  }
+
+  .fi {
+    width: 100%;
+    background: var(--s2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 11px 12px;
+    color: var(--text);
+    font-size: 0.88rem;
+    font-family: inherit;
+    outline: none;
+  }
+
+  .fi:focus { border-color: #303030; }
+  .fi::placeholder { color: #2e2e2e; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="ava">💪</div>
+  <div class="hero-info">
+    <div class="hero-name">Алексей Петров</div>
+    <div class="hero-title">Персональный тренер · Москва</div>
+    <div class="hero-stats">
+      <div class="hstat"><b>5+</b> лет</div>
+      <div class="hstat"><b>120+</b> клиентов</div>
+      <div class="hstat"><b>4.9★</b></div>
+    </div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="tab('programs',this)">Программы</div>
+  <div class="tab" onclick="tab('schedule',this)">Расписание</div>
+  <div class="tab" onclick="tab('about',this)">О тренере</div>
+</div>
+
+<!-- PROGRAMS -->
+<div class="screen active" id="programs">
+  <div class="label">Выберите программу</div>
+
+  <div class="pcard" onclick="pick(this,'Похудение','8 000 ₽/мес')">
+    <div class="pcard-icon">🔥</div>
+    <div class="pcard-body">
+      <div class="pcard-name">Похудение</div>
+      <div class="pcard-meta">
+        <span class="pmeta">12 тренировок</span>
+        <span class="pmeta">план питания</span>
+      </div>
+    </div>
+    <div class="pcard-price">8 000 ₽<small>в месяц</small></div>
+    <div class="check">✓</div>
+  </div>
+
+  <div class="pcard" onclick="pick(this,'Набор массы','8 000 ₽/мес')">
+    <div class="pcard-icon">💪</div>
+    <div class="pcard-body">
+      <div class="pcard-name">Набор массы</div>
+      <div class="pcard-meta">
+        <span class="pmeta">12 тренировок</span>
+        <span class="pmeta">питание</span>
+      </div>
+    </div>
+    <div class="pcard-price">8 000 ₽<small>в месяц</small></div>
+    <div class="check">✓</div>
+  </div>
+
+  <div class="pcard" onclick="pick(this,'Рельеф и сушка','10 000 ₽/мес')">
+    <div class="pcard-icon">⚡</div>
+    <div class="pcard-body">
+      <div class="pcard-name">Рельеф и сушка</div>
+      <div class="pcard-meta">
+        <span class="pmeta">16 тренировок</span>
+        <span class="pmeta">диета</span>
+        <span class="pmeta">замеры</span>
+      </div>
+    </div>
+    <div class="pcard-price">10 000 ₽<small>в месяц</small></div>
+    <div class="check">✓</div>
+  </div>
+
+  <div class="pcard" onclick="pick(this,'Онлайн тренировки','5 000 ₽/мес')">
+    <div class="pcard-icon">📱</div>
+    <div class="pcard-body">
+      <div class="pcard-name">Онлайн тренировки</div>
+      <div class="pcard-meta">
+        <span class="pmeta">12 тренировок</span>
+        <span class="pmeta">видео звонки</span>
+      </div>
+    </div>
+    <div class="pcard-price">5 000 ₽<small>в месяц</small></div>
+    <div class="check">✓</div>
+  </div>
+</div>
+
+<!-- SCHEDULE -->
+<div class="screen" id="schedule">
+  <div class="label">Свободное время</div>
+  <div class="day"><div class="day-name">Пн</div><div class="slots"><div class="slot free">09:00</div><div class="slot busy">11:00</div><div class="slot free">14:00</div><div class="slot busy">16:00</div></div></div>
+  <div class="day"><div class="day-name">Вт</div><div class="slots"><div class="slot busy">09:00</div><div class="slot free">12:00</div><div class="slot free">15:00</div></div></div>
+  <div class="day"><div class="day-name">Ср</div><div class="slots"><div class="slot free">10:00</div><div class="slot free">13:00</div><div class="slot busy">17:00</div></div></div>
+  <div class="day"><div class="day-name">Чт</div><div class="slots"><div class="slot free">09:00</div><div class="slot busy">11:00</div><div class="slot free">16:00</div></div></div>
+  <div class="day"><div class="day-name">Пт</div><div class="slots"><div class="slot busy">10:00</div><div class="slot free">13:00</div><div class="slot free">15:00</div></div></div>
+  <div style="margin-top:12px;display:flex;gap:12px;font-size:0.7rem;color:var(--muted);">
+    <span style="color:var(--accent)">● свободно</span>
+    <span style="opacity:0.4">● занято</span>
+  </div>
+</div>
+
+<!-- ABOUT -->
+<div class="screen" id="about">
+  <div class="about-text">Привет! Я Алексей — персональный тренер с 5-летним опытом. Помогаю людям достигать своих целей: похудеть, набрать массу или стать здоровее и сильнее.</div>
+  <div class="label">Достижения</div>
+  <div class="ach"><div class="ach-ico">🏆</div><div><div class="ach-t">Мастер спорта по пауэрлифтингу</div><div class="ach-s">2019 год</div></div></div>
+  <div class="ach"><div class="ach-ico">📜</div><div><div class="ach-t">Сертификат NASM Personal Trainer</div><div class="ach-s">Международная сертификация</div></div></div>
+  <div class="ach"><div class="ach-ico">👥</div><div><div class="ach-t">120+ довольных клиентов</div><div class="ach-s">За 5 лет работы</div></div></div>
+  <div class="ach"><div class="ach-ico">⭐</div><div><div class="ach-t">Рейтинг 4.9 из 5</div><div class="ach-s">На основе 80+ отзывов</div></div></div>
+</div>
+
+<div class="bottom">
+  <button class="btn" id="mainBtn" onclick="openModal()">Записаться на тренировку</button>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeOut(event)">
+  <div class="modal">
+    <div class="handle"></div>
+    <div class="modal-title" id="mTitle">Записаться</div>
+    <div class="modal-sub">Оставьте контакты — свяжемся в течение часа</div>
+    <div class="fg"><label class="fl">Имя</label><input class="fi" type="text" id="iName" placeholder="Как вас зовут?" oninput="check()"></div>
+    <div class="fg"><label class="fl">Телефон</label><input class="fi" type="tel" id="iPhone" placeholder="+7 (___) ___-__-__" oninput="check()"></div>
+    <button class="btn" id="subBtn" disabled onclick="send()" style="margin-top:8px">Отправить заявку</button>
+  </div>
+</div>
+
+<script>
+  let sel = { prog: null, price: null };
+  if (window.Telegram?.WebApp) { Telegram.WebApp.ready(); Telegram.WebApp.expand(); }
+
+  function tab(id, el) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    el.classList.add('active');
+  }
+
+  function pick(el, prog, price) {
+    document.querySelectorAll('.pcard').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    sel = { prog, price };
+  }
+
+  function openModal() {
+    if (sel.prog) document.getElementById('mTitle').textContent = sel.prog + ' · ' + sel.price;
+    document.getElementById('overlay').classList.add('open');
+  }
+
+  function closeOut(e) {
+    if (e.target === document.getElementById('overlay')) document.getElementById('overlay').classList.remove('open');
+  }
+
+  function check() {
+    const n = document.getElementById('iName').value.trim();
+    const p = document.getElementById('iPhone').value.trim();
+    document.getElementById('subBtn').disabled = !(n && p.length >= 6);
+  }
+
+  async function send() {
+    const name = document.getElementById('iName').value.trim();
+    const phone = document.getElementById('iPhone').value.trim();
+    document.getElementById('subBtn').disabled = true;
+    document.getElementById('subBtn').textContent = 'Отправляем...';
+    try {
+      await fetch('ВАШ_ВЕБХУК_URL', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ program: sel.prog || '—', price: sel.price || '—', name, phone })
+      });
+    } catch(e) {}
+    document.getElementById('overlay').classList.remove('open');
+    document.getElementById('mainBtn').textContent = '✓ Заявка отправлена!';
+    document.getElementById('mainBtn').disabled = true;
+  }
+</script>
+</body>
+</html>
